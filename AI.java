@@ -53,15 +53,12 @@ public class AI {
             world.pickHero(HeroName.SENTRY);
             pick_period++;
         } else {
-            if (world.getCurrentTurn() > 30) {
                 if (random.nextInt() % 2 == 0) {
                     world.pickHero(HeroName.HEALER);
                 } else {
                     world.pickHero(HeroName.GUARDIAN);
                 }
-            } else {
-                world.pickHero(HeroName.GUARDIAN);
-            }
+
             pick_period = 0;
         }
     }
@@ -349,7 +346,7 @@ public class AI {
                         targets.add(change(direction[i], world, targets.get(targets.size() - 1).getRow()
                                 , targets.get(targets.size() - 1).getColumn()));
                     }
-                    world.castAbility(hero, AbilityName.HEALER_HEAL, targets.get(targets.size() - 1));
+                    world.castAbility(hero, AbilityName.HEALER_DODGE, targets.get(targets.size() - 1));
                 }
             }
         }
