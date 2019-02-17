@@ -3,9 +3,7 @@ package client;
 import client.model.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Random;
-import java.util.Scanner;
 
 public class AI {
     private Random random = new Random();
@@ -15,29 +13,63 @@ public class AI {
 
     ArrayList<Cell> Blocked_Cells = new ArrayList<>();
 
+    int Dispersion;
+    boolean extraSentry = false;
+
+    public double Variance(ArrayList<Integer> dis)
+    {
+        double var=0,ave=0,sum2=0;
+        int sum1 =0;
+
+        for(int i=0;i<dis.size();i++)
+        {
+            sum1+=dis.get(i);
+        }
+
+        ave = sum1/dis.size();
+
+        for(int i=0;i<dis.size();i++)
+        {
+            sum2+=Math.pow(dis.get(i)-ave,2);
+        }
+
+        var = sum2/dis.size();
+        return var;
+    }
+
+//    public ArrayList<Cell> getMargine(World world)
+//    {
+//        Cell[] cells=world.getMap().getObjectiveZone();
+//
+//        for(int i=0;i<cells.length;i++)
+//        {
+//
+//        }
+//    }
+
     public void preProcess(World world) {
         System.out.println("pre process started");
         map = world.getMap();
         Cell[][] cells = map.getCells();
-        for (int i = 0; i < cells.length; i++) {
-            for (int j = 0; j < 31; j++) {
-                if (cells[i][j].isWall()) {
-                    Blocked_Cells.add(cells[i][j]);
-                }
+        ArrayList<Integer> dis =new ArrayList<>();
+
+        for(int i=0;i<31;i++)
+        {
+            for (int j = 0; j <31 ; j++) {
+
+                if(cells[i][j].isWall())
+                    dis.add(world.manhattanDistance(i,j,0,0));
             }
         }
-//        for (int i = 0; i < cells.length; i++) {
-//            for (int j = 0; j < cells[i].length; j++) {
-//                System.out.println("cell i:" + i + ",j:" + j);
-//                System.out.println("isInRespawnZone?:" + cells[i][j].isInMyRespawnZone());
-//                System.out.println("isInObjectiveZone?:" + cells[i][j].isInObjectiveZone());
-//                System.out.println("isInVision?" + cells[i][j].isInVision());
-//                System.out.println("isWall?" + cells[i][j].isWall());
-//                System.out.println();
-//            }
-//
-//            System.out.println();
-//        }
+
+        int delta=0;
+
+        Dispersion = (int) Variance(dis);
+        if(Dispersion>delta)
+        {
+            extraSentry = true;
+        }
+
     }
 
     public void pickTurn(World world) {
@@ -53,26 +85,16 @@ public class AI {
             world.pickHero(HeroName.SENTRY);
             pick_period++;
         } else {
-                if (random.nextInt() % 2 == 0) {
-                    world.pickHero(HeroName.HEALER);
-                } else {
-                    world.pickHero(HeroName.GUARDIAN);
-                }
+            if (random.nextInt() % 2 == 0) {
+                world.pickHero(HeroName.HEALER);
+            } else {
+                world.pickHero(HeroName.GUARDIAN);
+            }
 
             pick_period = 0;
         }
     }
 
-//    public void checkPoss(World world,){
-//        for (; j < 4; j++) {
-//            if (world.getMap().getCell(hero.getCurrentCell().getRow() + 1,
-//                    hero.getCurrentCell().getColumn()) == world.getMyHeroes()[i].getCurrentCell()){
-//                continue;
-//            }else{
-//                return true;
-//            }
-//        }
-//    }
 
     public void moveTurn(World world) {
         System.out.println("move started");
@@ -94,9 +116,7 @@ public class AI {
             Cell origin = My_hero.getCurrentCell();
             Direction directions[] =
                     world.getPathMoveDirections(origin, target, Blocked_Cells);
-            if (directions.length == 0) {
-                continue;
-            }
+
             if (world.getCurrentTurn() > 30 && world.getAP() < 75) {
                 i = 2;
             } else if (world.getAP() < 75) {
@@ -111,98 +131,9 @@ public class AI {
             System.out.println(world.getPathMoveDirections(origin, target, Blocked_Cells)[0].toString());
             Direction direction = directions[0];
             world.moveHero(My_hero, direction);
-//            Cell destination;
-//            if (direction.equals(Direction.DOWN)) {
-//                destination = world.getMap().getCell(origin.getRow()+1, origin.getColumn());
-//            } else if (direction.equals(Direction.UP)) {
-//                destination = world.getMap().getCell(origin.getRow() -1,origin.getColumn());
-//            } else if (direction.equals(Direction.LEFT)) {
-//                destination = world.getMap().getCell(origin.getRow(), origin.getColumn() -1);
-//            } else {
-//                destination = world.getMap().getCell(origin.getRow(), origin.getColumn()+1);
-//            }
-//            System.out.println("Hero Column:" + My_hero.getCurrentCell().getColumn() + ",row:" + My_hero.getCurrentCell().getRow());
-//            System.out.println("is the des wall?" + destination.isWall());
-//            System.out.println("direction:" + direction.toString());
-//            System.out.println("target:row"+target[0].getRow()+",column:"+target[0].getColumn());
-//            for (int j = 0; j < directions.length; j++) {
-//                System.out.println(j+":"+directions[j].toString());
-//            }
-//            System.out.println();
         }
+        Blocked_Cells.clear();
     }
-//        if (world.getMovePhaseNum() == 0) {
-//            My_hero = world.getMyHeroes()[0];
-//        } else if (world.getMovePhaseNum() == 1) {
-//            My_hero = world.getMyHeroes()[1];
-//        } else if (world.getMovePhaseNum() == 2) {
-//            My_hero = world.getMyHeroes()[2];
-//        } else if (world.getMovePhaseNum() == 3) {
-//            My_hero = world.getMyHeroes()[3];
-//        } else if (world.getMovePhaseNum() == 4) {
-//            if (get_Hero_By_Name(HeroName.SENTRY, world).getAbility(AbilityName.SENTRY_RAY).isReady()) {
-//                My_hero = get_Hero_By_Name(HeroName.SENTRY, world);
-//            } else {
-//                My_hero = get_Hero_By_Name(HeroName.BLASTER, world);
-//            }
-//        } else {
-//            My_hero = world.getMyHeroes()[random.nextInt(3)];
-//        }
-
-//        for (Hero hero : heroes) {
-//            int i = 0;
-//            if (!hero.getCurrentCell().isInObjectiveZone()) {
-//                System.out.println(hero.getName());
-//        if (!My_hero.getCurrentCell().isInObjectiveZone()){
-
-//        }
-//            }
-//            if (we_are_in_top) {
-//                if (((hero.getCurrentCell().getRow() + 1) < 31
-//                        && !world.getMap().getCell(hero.getCurrentCell().getRow() + 1,
-//                        hero.getCurrentCell().getColumn()).isWall())) {
-//                    int j = 0;
-//
-//
-//                    world.moveHero(hero, Direction.DOWN);
-//                } else if (((hero.getCurrentCell().getColumn() > 0)
-//                        && !world.getMap().getCell(hero.getCurrentCell().getRow(),
-//                        hero.getCurrentCell().getColumn() - 1).isWall())) {
-//
-//                    world.moveHero(hero, Direction.LEFT);
-//                } else if (((hero.getCurrentCell().getColumn() < 30)
-//                        && !world.getMap().getCell(hero.getCurrentCell().getRow(),
-//                        hero.getCurrentCell().getColumn() + 1).isWall())) {
-//                    world.moveHero(hero, Direction.RIGHT);
-//                } else {
-//                    if (hero.getCurrentCell().isInObjectiveZone()) {
-//
-//                    } else {
-//                        world.moveHero(hero, Direction.UP);
-//                    }
-//                }
-//            } else {
-//                if (((hero.getCurrentCell().getRow() - 1) > 0
-//                        && !world.getMap().getCell(hero.getCurrentCell().getRow() - 1,
-//                        hero.getCurrentCell().getColumn()).isWall())) {
-//                    world.moveHero(hero, Direction.UP);
-//                } else if (((hero.getCurrentCell().getColumn() > 0)
-//                        && !world.getMap().getCell(hero.getCurrentCell().getRow(),
-//                        hero.getCurrentCell().getColumn() - 1).isWall())) {
-//                    world.moveHero(hero, Direction.LEFT);
-//                } else if (((hero.getCurrentCell().getColumn() < 30)
-//                        && !world.getMap().getCell(hero.getCurrentCell().getRow(),
-//                        hero.getCurrentCell().getColumn() + 1).isWall())) {
-//                    world.moveHero(hero, Direction.RIGHT);
-//                } else {
-//                    if (hero.getCurrentCell().isInObjectiveZone()) {
-//
-//                    } else {
-//                        world.moveHero(hero, Direction.DOWN);
-//                    }
-//                }
-//            }
-//    }
 
 
     public void actionTurn(World world) {
@@ -366,105 +297,8 @@ public class AI {
         return target;
     }
 
-//    private Direction getDirection(Hero my_hero, World world, Direction offer) {
-//        Cell current_cell = my_hero.getCurrentCell();
-//        Direction direction = Direction.UP;
-//        if (offer.compareTo(Direction.DOWN) == 0) {
-//        } else if (offer.compareTo(Direction.UP) == 0) {
-//
-//        } else if (offer.compareTo(Direction.LEFT) == 0) {
-//
-//        } else {
-//
-//        }
-//
-//        if (we_are_in_top) {
-//            if (current_cell.getRow() < 30) {
-//                Cell down = world.getMap().getCell(current_cell.getRow() + 1, current_cell.getColumn());
-//                if (!down.isWall() && !Not_Occupied_by_Ourselves(down, world.getMyHeroes())) {
-//                    direction = Direction.DOWN;
-//                }
-//            } else if (current_cell.getColumn() < 30) {
-//                Cell right = world.getMap().getCell(current_cell.getRow(), current_cell.getColumn() + 1);
-//                if (!right.isWall() && !Not_Occupied_by_Ourselves(right, world.getMyHeroes())) {
-//                    direction = Direction.RIGHT;
-//                }
-//            } else if (current_cell.getColumn() > 1) {
-//                Cell left = world.getMap().getCell(current_cell.getRow(), current_cell.getColumn() - 1);
-//                if (!left.isWall() && !Not_Occupied_by_Ourselves(left, world.getMyHeroes())) {
-//                    direction = Direction.LEFT;
-//                }
-//            } else {
-//                direction = Direction.UP;
-//            }
-//        } else {
-//            if (current_cell.getRow() > 0) {
-//                Cell down = world.getMap().getCell(current_cell.getRow() - 1, current_cell.getColumn());
-//                if (!down.isWall() && !Not_Occupied_by_Ourselves(down, world.getMyHeroes())) {
-//                    direction = Direction.UP;
-//                }
-//            } else if (current_cell.getColumn() < 30) {
-//                Cell right = world.getMap().getCell(current_cell.getRow(), current_cell.getColumn() + 1);
-//                if (!right.isWall() && !Not_Occupied_by_Ourselves(right, world.getMyHeroes())) {
-//                    direction = Direction.RIGHT;
-//                }
-//            } else if (current_cell.getColumn() > 1) {
-//                Cell left = world.getMap().getCell(current_cell.getRow(), current_cell.getColumn() + 1);
-//                if (!left.isWall() && !Not_Occupied_by_Ourselves(left, world.getMyHeroes())) {
-//                    direction = Direction.LEFT;
-//                }
-//            } else {
-//                direction = Direction.DOWN;
-//            }
-//        }
-//        return direction;
-////    }
-//
-//    private boolean Not_Occupied_by_Ourselves(Cell down, Hero[] myHeroes) {
-//        for (Hero hero : myHeroes) {
-//            if (hero.getCurrentCell().equals(down)) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-
-//            for (int i = 0; i < 4; i++) {
-//                if (Opp_cells[i] != null) {
-//                    if (temp != null) {
-//                        if (world.manhattanDistance(hero.getCurrentCell(), Opp_cells[i]) <
-//                                world.manhattanDistance(hero.getCurrentCell(), temp)) {
-//                            row = Opp_cells[i].getRow();
-//                            column = Opp_cells[i].getColumn();
-//                            temp = Opp_cells[i];
-//                        }
-//                    }
-//                }
-//            }
-//            if (hero.getName().name().equals("Sentry")) {
-//                if (hero.getAbility(AbilityName.SENTRY_RAY).isReady()) {
-//                    world.castAbility(hero, hero.getAbility(AbilityName.SENTRY_RAY), row, column);
-//                }
-//            } else {
-//                if (hero.getName() != HeroName.HEALER) {
-//                    world.castAbility(hero, hero.getAbilities()[random.nextInt(3)], row, column);
-//                } else {
-//                    world.castAbility(hero, hero.getAbility(AbilityName.HEALER_HEAL), world.getMyHeroes()[random.nextInt(3)].getCurrentCell());
-//                }
-//            }
-
     private Cell is_under_attack(int i, Cell hero_cell, Cell cell, World world) {
 
-        return null;
-    }
-
-
-    private Hero get_Hero_By_Name(HeroName heroName, World world) {
-        for (Hero hero : world.getMyHeroes()) {
-            if (hero.getName().equals(heroName)) {
-                return hero;
-            }
-        }
         return null;
     }
 
