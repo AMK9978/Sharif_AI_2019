@@ -3,6 +3,7 @@ package client;
 import client.model.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 public class AI {
@@ -15,6 +16,8 @@ public class AI {
 
     int Dispersion;
     boolean extraSentry = false;
+    ArrayList<Cell>closestCells=new ArrayList<>();//for keeping closets cells from Respawn zone to objective zone
+    HashMap<Hero,Integer>myHeroesHp = new HashMap<>();
 
     public double Variance(ArrayList<Integer> dis)
     {
@@ -37,15 +40,31 @@ public class AI {
         return var;
     }
 
-//    public ArrayList<Cell> getMargine(World world)
-//    {
-//        Cell[] cells=world.getMap().getObjectiveZone();
-//
-//        for(int i=0;i<cells.length;i++)
-//        {
-//
-//        }
-//    }
+    public ArrayList<Cell> getClosestCells(World world)
+    {
+        Map map=world.getMap();
+        Cell[] MyRespawnZone = world.getMap().getMyRespawnZone();
+        Cell[] cells=world.getMap().getObjectiveZone();
+        ArrayList<Cell>closestCells = new ArrayList<>();
+
+
+        Cell minCell=null;
+        for(int i=0;i<MyRespawnZone.length;i++)
+        {
+            int min = 9999;
+            for (int j = 0; j <cells.length ; j++) {
+               int num= world.manhattanDistance(MyRespawnZone[i],cells[j]);
+               if(num<min)
+               {
+                   min = num;
+                   minCell = cells[j];
+               }
+            }
+            closestCells.add(minCell);
+        }
+
+        return closestCells;
+    }
 
     public void preProcess(World world) {
         System.out.println("pre process started");
@@ -69,6 +88,8 @@ public class AI {
         {
             extraSentry = true;
         }
+
+        closestCells = getClosestCells(world);
 
     }
 
@@ -107,11 +128,20 @@ public class AI {
         System.out.println("Phase in move:" + world.getMovePhaseNum());
         Cell[] targets = world.getMap().getObjectiveZone();
         Cell target = targets[random.nextInt(targets.length)];
+
         for (int i = 0; i < 4; i++) {
             My_hero = world.getMyHeroes()[i];
-            if (My_hero.getCurrentCell().isInObjectiveZone()) {
+            if (My_hero.getCurrentCell().isInObjectiveZone() && My_hero.getCurrentHP()== myHeroesHp.get(My_hero)) {
                 continue;
+            }else if (My_hero.getCurrentCell().isInObjectiveZone() && My_hero.getCurrentHP()<myHeroesHp.get(My_hero))
+            {
+
             }
+            else if (!My_hero.getCurrentCell().isInObjectiveZone()){
+
+            }
+            myHeroesHp.put(My_hero,My_hero.getCurrentHP());
+            
             My_hero = world.getMyHeroes()[i];
             Cell origin = My_hero.getCurrentCell();
             Direction directions[] =
@@ -280,6 +310,7 @@ public class AI {
                     world.castAbility(hero, AbilityName.HEALER_DODGE, targets.get(targets.size() - 1));
                 }
             }
+
         }
     }
 
