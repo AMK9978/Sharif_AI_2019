@@ -15,62 +15,55 @@ public class AI {
 
     int Dispersion;
     boolean extraSentry = false;
-    ArrayList<Cell>closestCells=new ArrayList<>();//for keeping closets cells from Respawn zone to objective zone
-    HashMap<Hero,Integer>myHeroesHp = new HashMap<>();
+    ArrayList<Cell> closestCells = new ArrayList<>();//for keeping closets cells from Respawn zone to objective zone
+    HashMap<Hero, Integer> myHeroesHp = new HashMap<>();
     PriorityQueue<NiceCell> niceCells = new PriorityQueue<>();
 
     //adding this class to have enough information in order to move
-    class NiceCell
-    {
-        public double score =0;
+    class NiceCell {
+        public double score = 0;
         public Hero hero;
         public Direction direction = Direction.DOWN;
-        public int  targetCellRow = 0;
+        public int targetCellRow = 0;
         public int targetCellColl = 0;
         public String heroName = "";
     }
 
 
-    public double Variance(ArrayList<Integer> dis)
-    {
-        double var=0,ave=0,sum2=0;
-        int sum1 =0;
+    public double Variance(ArrayList<Integer> dis) {
+        double var = 0, ave = 0, sum2 = 0;
+        int sum1 = 0;
 
-        for(int i=0;i<dis.size();i++)
-        {
-            sum1+=dis.get(i);
+        for (int i = 0; i < dis.size(); i++) {
+            sum1 += dis.get(i);
         }
 
-        ave = sum1/dis.size();
+        ave = sum1 / dis.size();
 
-        for(int i=0;i<dis.size();i++)
-        {
-            sum2+=Math.pow(dis.get(i)-ave,2);
+        for (int i = 0; i < dis.size(); i++) {
+            sum2 += Math.pow(dis.get(i) - ave, 2);
         }
 
-        var = sum2/dis.size();
+        var = sum2 / dis.size();
         return var;
     }
 
-    public ArrayList<Cell> getClosestCells(World world)
-    {
-        Map map=world.getMap();
+    public ArrayList<Cell> getClosestCells(World world) {
+        Map map = world.getMap();
         Cell[] MyRespawnZone = world.getMap().getMyRespawnZone();
-        Cell[] cells=world.getMap().getObjectiveZone();
-        ArrayList<Cell>closestCells = new ArrayList<>();
+        Cell[] cells = world.getMap().getObjectiveZone();
+        ArrayList<Cell> closestCells = new ArrayList<>();
 
 
         Cell minCell = null;
-        for(int i=0;i<MyRespawnZone.length;i++)
-        {
+        for (int i = 0; i < MyRespawnZone.length; i++) {
             int min = 9999;
-            for (int j = 0; j <cells.length ; j++) {
-               int num= world.manhattanDistance(MyRespawnZone[i],cells[j]);
-               if(num<min)
-               {
-                   min = num;
-                   minCell = cells[j];
-               }
+            for (int j = 0; j < cells.length; j++) {
+                int num = world.manhattanDistance(MyRespawnZone[i], cells[j]);
+                if (num < min) {
+                    min = num;
+                    minCell = cells[j];
+                }
             }
             closestCells.add(minCell);
         }
@@ -79,38 +72,34 @@ public class AI {
     }
 
     //checking whether the intended cell is in objective zone or not
-    boolean IsObjectiveZone(int cellRow,int cellCol,World world)
-    {
+    boolean IsObjectiveZone(int cellRow, int cellCol, World world) {
         Cell[] objectiveZone = world.getMap().getObjectiveZone();
 
-        for (int i = 0; i <objectiveZone.length ; i++) {
-            if(cellRow == objectiveZone[i].getRow() && cellCol == objectiveZone[i].getColumn())
+        for (int i = 0; i < objectiveZone.length; i++) {
+            if (cellRow == objectiveZone[i].getRow() && cellCol == objectiveZone[i].getColumn())
                 return true;
         }
         return false;
     }
 
     //checking whether the intended cell is wall or not
-    boolean IsWall(int cellRow,int cellCol,World world)
-    {
-        return world.getMap().getCell(cellRow,cellCol).isWall();
+    boolean IsWall(int cellRow, int cellCol, World world) {
+        return world.getMap().getCell(cellRow, cellCol).isWall();
     }
 
     //finding the best cell to move
-    public void finding_good_cell_to_move(Hero[] My_heroes,World world)
-    {
-        boolean isSentry = false,isBlaster = false,isHealer = false,isGuardian = false;
+    public void finding_good_cell_to_move(Hero[] My_heroes, World world) {
+        boolean isSentry = false, isBlaster = false, isHealer = false, isGuardian = false;
         int cnt = 0;
 
         Hero Healer = null;
 
         for (int i = 0; i < My_heroes.length; i++) {
             Hero hero = My_heroes[i];
-           if(hero.getName().equals(HeroName.HEALER))
-           {
-               Healer = hero;
-               break;
-           }
+            if (hero.getName().equals(HeroName.HEALER)) {
+                Healer = hero;
+                break;
+            }
         }
         Hero intended_hero = null;
         Hero[] oppHeroes = world.getOppHeroes();
@@ -119,12 +108,12 @@ public class AI {
         String heroName = "";
         double score = 0;
 
-        Cell cell = world.getMap().getCell(0,0);
+        Cell cell = world.getMap().getCell(0, 0);
 
         int niceTargetRow = 0;
         int niceTargetColl = 0;
 
-        for(Hero hero:My_heroes) {
+        for (Hero hero : My_heroes) {
             max = -9999;
 
             if (hero.getName().equals(HeroName.SENTRY)) {
@@ -152,242 +141,240 @@ public class AI {
             cell = hero.getCurrentCell();
 
             //moving up
-            {
-                if (cell.getRow() - 1 >= 0) {
+            if (world.getMap().isInMap(cell.getRow() - 1, cell.getColumn()) &&
+                    !world.getMap().getCell(cell.getRow() - 1, cell.getColumn()).isWall()) {
 
-                    Cell targetCell = world.getMap().getCell(cell.getRow()-1,cell.getColumn());
+                Cell targetCell = world.getMap().getCell(cell.getRow() - 1, cell.getColumn());
 
-                    if (targetCell.isInObjectiveZone())
-                        score += 1;
+                if (targetCell.isInObjectiveZone())
+                    score += 1;
 
-                    if (targetCell.isWall())
+                if (Healer != null) {
+
+                    Cell healerCell = Healer.getCurrentCell();
+                    if (!isHealer && world.manhattanDistance(cell, healerCell) <= 4)
+                        score += .5;
+                }
+
+                if (!myHeroesHp.isEmpty())
+                    if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
+                        score -= 2;
+
+                for (Hero oppHero : oppHeroes) {
+                    Cell oppCell = oppHero.getCurrentCell();
+
+                    if (oppHero.getName().equals(HeroName.SENTRY)&&world.isInVision(hero.getCurrentCell()
+                            ,oppHero.getCurrentCell())) {
                         score -= 1;
+                    } else if (oppHero.getName().equals(HeroName.BLASTER)) {
 
-                    if (Healer != null) {
-
-                        Cell healerCell = Healer.getCurrentCell();
-                        if (!isHealer && world.manhattanDistance(cell,healerCell) <= 4)
-                            score += .5;
-                    }
-
-                    if(!myHeroesHp.isEmpty())
-                        if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
-                            score -= 2;
-
-                    for (Hero oppHero : oppHeroes) {
-                        Cell oppCell = oppHero.getCurrentCell();
-
-                        if (oppHero.getName().equals(HeroName.SENTRY)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 4)
+                            score += 1;
+                        else
                             score -= 1;
-                        } else if (oppHero.getName().equals(HeroName.BLASTER)) {
 
-                            if (world.manhattanDistance(targetCell, oppCell) > 4)
-                                score += 1;
-                            else
-                                score -= 1;
+                    } else if (oppHero.getName().equals(HeroName.GUARDIAN)) {
 
-                        } else if (oppHero.getName().equals(HeroName.GUARDIAN)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 1)
+                            score += 1;
+                        else
+                            score -= 1;
 
-                            if (world.manhattanDistance(targetCell, oppCell) > 1)
-                                score += 1;
-                            else
-                                score -= 1;
+                    } else if (oppHero.getName().equals(HeroName.HEALER)) {
 
-                        } else if (oppHero.getName().equals(HeroName.HEALER)) {
-
-                            if (world.manhattanDistance(targetCell,oppCell)> 4)
-                                score += 1;
-                            else
-                                score -= 1;
-                        }
-
+                        if (world.manhattanDistance(targetCell, oppCell) > 4)
+                            score += 1;
+                        else
+                            score -= 1;
                     }
 
-                    if (max < score) {
-                        max = score;
-                        niceTargetRow = cell.getRow() - 1;
-                        niceTargetColl = cell.getColumn();
-                        intended_hero = world.getMyHero(cell);
-                        direction = Direction.UP;
-                    }
+                }
+
+                if (max < score) {
+                    max = score;
+                    niceTargetRow = cell.getRow() - 1;
+                    niceTargetColl = cell.getColumn();
+                    intended_hero = world.getMyHero(cell);
+                    direction = Direction.UP;
                 }
             }
+
 
             //moving down
-            {
-                if (cell.getRow() + 1 < 31 && !cell.isWall()) {
 
-                    Cell targetCell = world.getMap().getCell(cell.getRow()+1,cell.getColumn());
-                    
-                    if (targetCell.isInObjectiveZone())
-                        score += 1;
+            if (world.getMap().isInMap(cell.getRow() + 1, cell.getColumn()) &&
+                    !world.getMap().getCell(cell.getRow() + 1, cell.getColumn()).isWall()) {
 
-                    if (targetCell.isWall())
+                Cell targetCell = world.getMap().getCell(cell.getRow() + 1, cell.getColumn());
+
+                if (targetCell.isInObjectiveZone())
+                    score += 1;
+
+                if (targetCell.isWall())
+                    score -= 100;
+
+                if (Healer != null) {
+                    Cell healerCell = Healer.getCurrentCell();
+
+                    if (!isHealer && world.manhattanDistance(cell, healerCell) <= 4)
+                        score += .5;
+                }
+
+                if (!myHeroesHp.isEmpty())
+                    if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
+                        score -= 2;
+
+                for (Hero oppHero : oppHeroes) {
+                    Cell oppCell = oppHero.getCurrentCell();
+                    if (oppHero.getName().equals(HeroName.SENTRY)&&world.isInVision(hero.getCurrentCell()
+                            ,oppHero.getCurrentCell())) {
                         score -= 1;
+                    } else if (oppHero.getName().equals(HeroName.BLASTER)) {
 
-                    if (Healer != null) {
-                        Cell healerCell = Healer.getCurrentCell();
-
-                        if (!isHealer && world.manhattanDistance(cell,healerCell) <= 4)
-                            score += .5;
-                    }
-
-                    if(!myHeroesHp.isEmpty())
-                         if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
-                             score -= 2;
-
-                    for (Hero oppHero : oppHeroes) {
-                        Cell oppCell = oppHero.getCurrentCell();
-                        if (oppHero.getName().equals(HeroName.SENTRY)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 4)
+                            score += 1;
+                        else
                             score -= 1;
-                        } else if (oppHero.getName().equals(HeroName.BLASTER)) {
-
-                            if (world.manhattanDistance(targetCell, oppCell) > 4)
-                                score += 1;
-                            else
-                                score -= 1;
-                        } else if (oppHero.getName().equals(HeroName.GUARDIAN)) {
-                            if (world.manhattanDistance(targetCell, oppCell) > 1)
-                                score += 1;
-                            else
-                                score -= 1;
-                        } else if (oppHero.getName().equals(HeroName.HEALER)) {
-                            if (world.manhattanDistance(targetCell, oppCell) > 4)
-                                score += 1;
-                            else
-                                score -= 1;
-                        }
-
+                    } else if (oppHero.getName().equals(HeroName.GUARDIAN)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 1)
+                            score += 1;
+                        else
+                            score -= 1;
+                    } else if (oppHero.getName().equals(HeroName.HEALER)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 4)
+                            score += 1;
+                        else
+                            score -= 1;
                     }
 
-                    if (max < score) {
-                        max = score;
-                        niceTargetRow = cell.getRow() + 1;
-                        niceTargetColl = cell.getColumn();
-                        direction = Direction.DOWN;
-                        intended_hero = world.getMyHero(cell);
-                    }
+                }
+
+                if (max < score) {
+                    max = score;
+                    niceTargetRow = cell.getRow() + 1;
+                    niceTargetColl = cell.getColumn();
+                    direction = Direction.DOWN;
+                    intended_hero = world.getMyHero(cell);
                 }
             }
+
             //moving left
-            {
-                if (cell.getColumn() - 1 >= 0 && !cell.isWall()) {
 
-                    Cell targetCell = world.getMap().getCell(cell.getRow(),cell.getColumn() - 1);
+            if (world.getMap().isInMap(cell.getRow(), cell.getColumn() - 1) &&
+                    !world.getMap().getCell(cell.getRow(), cell.getColumn() - 1).isWall()) {
 
-                    if (targetCell.isInObjectiveZone())
-                        score += 1;
+                Cell targetCell = world.getMap().getCell(cell.getRow(), cell.getColumn() - 1);
 
-                    if (targetCell.isWall())
+                if (targetCell.isInObjectiveZone())
+                    score += 1;
+
+                if (Healer != null) {
+                    Cell healerCell = Healer.getCurrentCell();
+
+                    if (!isHealer && world.manhattanDistance(cell, healerCell) <= 4)
+                        score += .5;
+                }
+
+                if (!myHeroesHp.isEmpty())
+                    if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
+                        score -= 2;
+
+                for (Hero oppHero : oppHeroes) {
+
+                    Cell oppCell = oppHero.getCurrentCell();
+                    if (oppHero.getName().equals(HeroName.SENTRY)&&world.isInVision(hero.getCurrentCell()
+                            ,oppHero.getCurrentCell())) {
                         score -= 1;
-
-                    if (Healer != null) {
-                        Cell healerCell = Healer.getCurrentCell();
-
-                        if (!isHealer && world.manhattanDistance(cell,healerCell) <= 4)
-                            score += .5;
-                    }
-
-                    if(!myHeroesHp.isEmpty())
-                         if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
-                             score -= 2;
-
-                    for (Hero oppHero : oppHeroes) {
-
-                        Cell oppCell = oppHero.getCurrentCell();
-                        if (oppHero.getName().equals(HeroName.SENTRY)) {
+                    } else if (oppHero.getName().equals(HeroName.BLASTER)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 4)
+                            score += 1;
+                        else
                             score -= 1;
-                        } else if (oppHero.getName().equals(HeroName.BLASTER)) {
-                            if (world.manhattanDistance(targetCell, oppCell) > 4)
-                                score += 1;
-                            else
-                                score -= 1;
-                        } else if (oppHero.getName().equals(HeroName.GUARDIAN)) {
-                            if (world.manhattanDistance(targetCell, oppCell) > 1)
-                                score += 1;
-                            else
-                                score -= 1;
-                        } else if (oppHero.getName().equals(HeroName.HEALER)) {
-                            if (world.manhattanDistance(targetCell, oppCell) > 4)
-                                score += 1;
-                            else
-                                score -= 1;
-                        }
-
+                    } else if (oppHero.getName().equals(HeroName.GUARDIAN)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 1)
+                            score += 1;
+                        else
+                            score -= 1;
+                    } else if (oppHero.getName().equals(HeroName.HEALER)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 4)
+                            score += 1;
+                        else
+                            score -= 1;
                     }
 
-                    if (max < score) {
-                        max = score;
-                        niceTargetRow = cell.getRow();
-                        niceTargetColl = cell.getColumn() - 1;
-                        direction = Direction.LEFT;
-                        intended_hero = world.getMyHero(cell);
-                    }
+                }
+
+                if (max < score) {
+                    max = score;
+                    niceTargetRow = cell.getRow();
+                    niceTargetColl = cell.getColumn() - 1;
+                    direction = Direction.LEFT;
+                    intended_hero = world.getMyHero(cell);
                 }
             }
+
             //moving right
-            {
-                if (cell.getColumn() + 1 < 31 && !cell.isWall()) {
 
-                    Cell targetCell = world.getMap().getCell(cell.getRow(),cell.getColumn()+1);
+            if (world.getMap().isInMap(cell.getRow(), cell.getColumn() + 1) &&
+                    !world.getMap().getCell(cell.getRow(), cell.getColumn() + 1).isWall()) {
 
-                    if (targetCell.isInObjectiveZone())
-                        score += 1;
+                Cell targetCell = world.getMap().getCell(cell.getRow(), cell.getColumn() + 1);
 
-                    if (targetCell.isWall())
+                if (targetCell.isInObjectiveZone())
+                    score += 1;
+
+                if (Healer != null) {
+
+                    Cell healerCell = Healer.getCurrentCell();
+
+                    if (!isHealer && world.manhattanDistance(cell, healerCell) <= 4)
+                        score += .5;
+                }
+
+                if (!myHeroesHp.isEmpty())
+                    if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
+                        score -= 2;
+
+                for (Hero oppHero : oppHeroes) {
+
+                    Cell oppCell = oppHero.getCurrentCell();
+
+                    if (oppHero.getName().equals(HeroName.SENTRY)&&world.isInVision(hero.getCurrentCell()
+                            ,oppHero.getCurrentCell())) {
                         score -= 1;
+                    } else if (oppHero.getName().equals(HeroName.BLASTER)) {
 
-                    if (Healer != null) {
-
-                        Cell healerCell = Healer.getCurrentCell();
-
-                        if (!isHealer && world.manhattanDistance(cell, healerCell) <= 4)
-                            score += .5;
-                    }
-
-                    if(!myHeroesHp.isEmpty())
-                        if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
-                            score -= 2;
-
-                    for (Hero oppHero : oppHeroes) {
-
-                        Cell oppCell = oppHero.getCurrentCell();
-
-                        if (oppHero.getName().equals(HeroName.SENTRY)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 4)
+                            score += 1;
+                        else
                             score -= 1;
-                        } else if (oppHero.getName().equals(HeroName.BLASTER)) {
 
-                            if (world.manhattanDistance(targetCell, oppCell) > 4)
-                                score += 1;
-                            else
-                                score -= 1;
+                    } else if (oppHero.getName().equals(HeroName.GUARDIAN)) {
 
-                        } else if (oppHero.getName().equals(HeroName.GUARDIAN)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 1)
+                            score += 1;
+                        else
+                            score -= 1;
 
-                            if (world.manhattanDistance(targetCell,oppCell) > 1)
-                                score += 1;
-                            else
-                                score -= 1;
-
-                        } else if (oppHero.getName().equals(HeroName.HEALER)) {
-                            if (world.manhattanDistance(targetCell, oppCell) > 4)
-                                score += 1;
-                            else
-                                score -= 1;
-                        }
-
+                    } else if (oppHero.getName().equals(HeroName.HEALER)) {
+                        if (world.manhattanDistance(targetCell, oppCell) > 4)
+                            score += 1;
+                        else
+                            score -= 1;
                     }
 
-                    if (max < score) {
-                        max = score;
-                        niceTargetRow = cell.getRow();
-                        niceTargetColl = cell.getColumn() + 1;
-                        direction = Direction.RIGHT;
-                        intended_hero = world.getMyHero(cell);
+                }
 
-                    }
+                if (max < score) {
+                    max = score;
+                    niceTargetRow = cell.getRow();
+                    niceTargetColl = cell.getColumn() + 1;
+                    direction = Direction.RIGHT;
+                    intended_hero = world.getMyHero(cell);
+
                 }
             }
+
         }
 
         if (isSentry) {
@@ -403,7 +390,7 @@ public class AI {
         NiceCell nice_cell = new NiceCell();
         nice_cell.score = max;
         nice_cell.hero = intended_hero;
-        nice_cell.targetCellRow = niceTargetRow ;
+        nice_cell.targetCellRow = niceTargetRow;
         nice_cell.targetCellColl = niceTargetColl;
         nice_cell.heroName = heroName;
         nice_cell.direction = direction;
@@ -415,22 +402,20 @@ public class AI {
         System.out.println("pre process started");
         map = world.getMap();
         Cell[][] cells = map.getCells();
-        ArrayList<Integer> dis =new ArrayList<>();
+        ArrayList<Integer> dis = new ArrayList<>();
 
-        for(int i=0;i<31;i++)
-        {
-            for (int j = 0; j <31 ; j++) {
+        for (int i = 0; i < 31; i++) {
+            for (int j = 0; j < 31; j++) {
 
-                if(cells[i][j].isWall())
-                    dis.add(world.manhattanDistance(i,j,0,0));
+                if (cells[i][j].isWall())
+                    dis.add(world.manhattanDistance(i, j, 0, 0));
             }
         }
 
-        int delta=0;
+        int delta = 0;
 
         Dispersion = (int) Variance(dis);
-        if(Dispersion>delta)
-        {
+        if (Dispersion > delta) {
             extraSentry = true;
         }
 
@@ -465,9 +450,6 @@ public class AI {
     public void moveTurn(World world) {
         System.out.println("move started");
 
-        for (int j = 0; j < world.getMyHeroes().length; j++) {
-            Blocked_Cells.add(world.getMyHeroes()[j].getCurrentCell());
-        }
 
         Cell[][] cells = world.getMap().getCells();
         Hero My_hero = null;
@@ -479,6 +461,9 @@ public class AI {
         Cell target = targets[random.nextInt(targets.length)];
 
         for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < world.getMyHeroes().length; j++) {
+                Blocked_Cells.add(world.getMyHeroes()[j].getCurrentCell());
+            }
             My_hero = world.getMyHeroes()[i];
             if (My_hero.getCurrentCell().isInObjectiveZone() && !myHeroesHp.isEmpty()) {
 
@@ -499,15 +484,13 @@ public class AI {
                 Cell origin = My_hero.getCurrentCell();
                 Direction directions[] =
                         world.getPathMoveDirections(origin, target, Blocked_Cells);
-                if(directions.length == 0)
-                    continue;
                 Direction direction = directions[0];
                 world.moveHero(My_hero, direction);
             }
             myHeroesHp.put(My_hero, My_hero.getCurrentHP());
+            Blocked_Cells.clear();
         }
 
-        Blocked_Cells.clear();
 
 //        for (int i = 0; i < 4; i++) {
 //            My_hero = world.getMyHeroes()[i];
