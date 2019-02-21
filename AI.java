@@ -96,25 +96,23 @@ public class AI {
         return world.getMap().getCell(cellRow,cellCol).isWall();
     }
 
-    //finding best cell to move
+    //finding the best cell to move
     public void finding_good_cell_to_move(Hero[] My_heroes,World world)
     {
         boolean isSentry = false,isBlaster = false,isHealer = false,isGuardian = false;
         int cnt = 0;
-        for(Hero hero:My_heroes)
-        {
-            if(hero.getName().equals(HeroName.HEALER)) {
-                isHealer = true;
-                break;
-            }
-            cnt++;
+
+        Hero Healer = null;
+
+        for (int i = 0; i < My_heroes.length; i++) {
+            Hero hero = My_heroes[i];
+           if(hero.getName().equals(HeroName.HEALER))
+           {
+               Healer = hero;
+               break;
+           }
         }
-
-        Hero Healer = My_heroes[cnt];
-        if(!Healer.getName().equals(HeroName.HEALER))
-            Healer = null;
-
-        Hero intended_hero = My_heroes[cnt];
+        Hero intended_hero = null;
         Hero[] oppHeroes = world.getOppHeroes();
         double max = -9999;
         Direction direction = Direction.UP;
@@ -172,8 +170,9 @@ public class AI {
                             score += .5;
                     }
 
-                    if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
-                        score -= 2;
+                    if(!myHeroesHp.isEmpty())
+                        if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
+                            score -= 2;
 
                     for (Hero oppHero : oppHeroes) {
                         Cell oppCell = oppHero.getCurrentCell();
@@ -219,7 +218,7 @@ public class AI {
                 if (cell.getRow() + 1 < 31 && !cell.isWall()) {
 
                     Cell targetCell = world.getMap().getCell(cell.getRow()+1,cell.getColumn());
-
+                    
                     if (targetCell.isInObjectiveZone())
                         score += 1;
 
@@ -233,8 +232,9 @@ public class AI {
                             score += .5;
                     }
 
-                    if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
-                        score -= 2;
+                    if(!myHeroesHp.isEmpty())
+                         if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
+                             score -= 2;
 
                     for (Hero oppHero : oppHeroes) {
                         Cell oppCell = oppHero.getCurrentCell();
@@ -288,8 +288,9 @@ public class AI {
                             score += .5;
                     }
 
-                    if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
-                        score -= 2;
+                    if(!myHeroesHp.isEmpty())
+                         if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
+                             score -= 2;
 
                     for (Hero oppHero : oppHeroes) {
 
@@ -344,8 +345,9 @@ public class AI {
                             score += .5;
                     }
 
-                    if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
-                        score -= 2;
+                    if(!myHeroesHp.isEmpty())
+                        if (hero.getCurrentHP() - myHeroesHp.get(hero) < 0)
+                            score -= 2;
 
                     for (Hero oppHero : oppHeroes) {
 
@@ -467,33 +469,45 @@ public class AI {
             Blocked_Cells.add(world.getMyHeroes()[j].getCurrentCell());
         }
 
-        Hero[] heroes = world.getMyHeroes();
         Cell[][] cells = world.getMap().getCells();
-        Hero My_hero;
-        Hero intended_hero;
+        Hero My_hero = null;
+        Hero intended_hero = null;
+        Hero[] heroes = world.getMyHeroes();
 
         System.out.println("Phase in move:" + world.getMovePhaseNum());
         Cell[] targets = world.getMap().getObjectiveZone();
         Cell target = targets[random.nextInt(targets.length)];
 
-        for (int i = 0; i <4 ; i++) {
+        for (int i = 0; i < 4; i++) {
             My_hero = world.getMyHeroes()[i];
+            if (My_hero.getCurrentCell().isInObjectiveZone() && !myHeroesHp.isEmpty()) {
 
-            if (My_hero.getCurrentCell().isInObjectiveZone()) {
-                NiceCell niceCell = niceCells.peek();
-                world.moveHero(niceCell.hero,niceCell.direction);
-                niceCells.clear();
+                if (My_hero.getCurrentHP() == myHeroesHp.get(My_hero))
+                    continue;
+                else if (My_hero.getCurrentHP() - myHeroesHp.get(My_hero) < 0) {
+                    finding_good_cell_to_move(heroes, world);
+                    NiceCell niceCell = new NiceCell();
+                    niceCell = niceCells.peek();
+                    System.out.println("size of niceCells is: " + niceCells.size());
+                    System.out.println("here in nice cell: " + niceCell.hero);
+                    System.out.println("direction for hero to move in nice cell: " + niceCell.direction);
+                    world.moveHero(niceCell.hero, niceCell.direction);
+                    niceCells.clear();
+                }
+            } else {
+                My_hero = world.getMyHeroes()[i];
+                Cell origin = My_hero.getCurrentCell();
+                Direction directions[] =
+                        world.getPathMoveDirections(origin, target, Blocked_Cells);
+                if(directions.length == 0)
+                    continue;
+                Direction direction = directions[0];
+                world.moveHero(My_hero, direction);
             }
-
-            myHeroesHp.put(My_hero,My_hero.getCurrentHP());
-            Cell origin = My_hero.getCurrentCell();
-            Direction directions[] =
-                    world.getPathMoveDirections(origin, target, Blocked_Cells);
-
-            Direction direction = directions[0];
-            world.moveHero(My_hero, direction);
-
+            myHeroesHp.put(My_hero, My_hero.getCurrentHP());
         }
+
+        Blocked_Cells.clear();
 
 //        for (int i = 0; i < 4; i++) {
 //            My_hero = world.getMyHeroes()[i];
@@ -529,7 +543,7 @@ public class AI {
 //            world.moveHero(My_hero, direction);
 //
 //        }
-        Blocked_Cells.clear();
+//        Blocked_Cells.clear();
     }
 
 
