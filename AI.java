@@ -216,7 +216,7 @@ public class AI {
         Cell goodCell = getClosestCells(world, hero).get(0);
         if (world.getPathMoveDirections(cell, goodCell)[0] == direction)
             score += 2;
-        if (name == HeroName.BLASTER && hero.getAbility(AbilityName.BLASTER_BOMB).isReady() || name == HeroName.HEALER) {
+        if ((name == HeroName.BLASTER && hero.getAbility(AbilityName.BLASTER_BOMB).isReady()) || name == HeroName.HEALER) {
             Cell[] objective = world.getMap().getObjectiveZone();
             for (Cell aCell : objective) {
                 Boolean notVis = true;
