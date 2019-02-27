@@ -265,9 +265,10 @@ public class AI {
             }
         }
         blocks.clear();
-        if (!hero.getCurrentCell().isInObjectiveZone() && world.getPathMoveDirections(cell, goodCell, Blocked_Cells).length != 0 &&
+        if (!hero.getCurrentCell().isInObjectiveZone() && world.getPathMoveDirections(cell, goodCell, Blocked_Cells)
+                .length != 0 &&
                 world.getPathMoveDirections(cell, goodCell, Blocked_Cells)[0] == direction) {
-            score += 3;
+            score += 2.5;
             if (world.getCurrentTurn() == 4 && (name.equals(HeroName.SENTRY) || name.equals(HeroName.BLASTER))) {
                 System.err.println("hero goes to good cell," + name
                         + ",hero row:" + hero.getCurrentCell().getRow() + ",column:" + hero.getCurrentCell().getColumn());
@@ -296,21 +297,31 @@ public class AI {
 //            }
         } else if (name.equals(HeroName.SENTRY)) {
             for (Hero oHero : oppHeroes) {
-                if (oHero.getName() == HeroName.SENTRY) {
-                    continue;
+                if (oHero.getName() == HeroName.SENTRY &&
+                        world.isInVision(oHero.getCurrentCell(),hero.getCurrentCell())
+                        && oHero.getCurrentHP() > hero.getCurrentHP()) {
+                    score -= 1;
                 }
                 Cell heroCell = oHero.getCurrentCell();
                 if (world.isInVision(heroCell, targetCell)) {
                     if (hero.getAbility(AbilityName.SENTRY_RAY).isReady()) {
-                        score += 2;
+                        score += 2.5;
                         break;
                     }
                     if (world.manhattanDistance(heroCell, targetCell)
                             <= hero.getAbility(AbilityName.SENTRY_ATTACK).getRange()) {
-                        score += 1;
+                        score += 1.5;
                         break;
                     }
-                } 
+                }
+            }
+            for (Hero oHero : oppHeroes) {
+                Cell heroCell = oHero.getCurrentCell();
+                if (world.manhattanDistance(heroCell,hero.getCurrentCell()) < 7 &&
+                        oHero.getName().equals(HeroName.BLASTER) && oHero.getCurrentHP() > 150){
+                    score -= (6 - world.manhattanDistance(heroCell, targetCell))/2;
+                    break;
+                }
             }
 
         } else if (name.equals(HeroName.GUARDIAN)) {
@@ -319,12 +330,19 @@ public class AI {
                 if (world.isInVision(heroCell, targetCell)) {
                     score += (3 - world.manhattanDistance(heroCell, targetCell));
                 }
-
+            }
+        }else if (name.equals(HeroName.HEALER)){
+            for (Hero oHero : oppHeroes) {
+                Cell heroCell = oHero.getCurrentCell();
+                if (world.manhattanDistance(heroCell,hero.getCurrentCell()) < 7 &&
+                        oHero.getName().equals(HeroName.BLASTER) && oHero.getCurrentHP() > 150){
+                    score -= (6 - world.manhattanDistance(heroCell, targetCell))/2;
+                    break;
+                }
             }
         }
 
         if (Healer != null) {
-
             Cell healerCell = Healer.getCurrentCell();
             if (!isHealer && world.manhattanDistance(cell, healerCell) <= 4)
                 score += .5;
@@ -335,7 +353,7 @@ public class AI {
             Cell oppCell = oppHero.getCurrentCell();
             if (!oppHero.getCurrentCell().isInVision())
                 continue;
-            if ((hero.getName() != HeroName.SENTRY || (hero.getName().equals(HeroName.SENTRY) &&
+            if ((!hero.getName().equals(HeroName.SENTRY) || (hero.getName().equals(HeroName.SENTRY) &&
                     !hero.getAbility(AbilityName.SENTRY_RAY).isReady()))
                     && oppHero.getName().equals(HeroName.SENTRY) && world.isInVision(hero.getCurrentCell()
                     , targetCell)) {
@@ -357,11 +375,27 @@ public class AI {
                     System.out.println("Near of Guardian");
                 }
             }
-            if (oppHero.getName().equals(HeroName.HEALER)) {
-                if (world.manhattanDistance(targetCell, oppCell) < 4)
-                    score -= 1;
+//            if (oppHero.getName().equals(HeroName.HEALER)) {
+//                if (world.manhattanDistance(targetCell, oppCell) < 4 &&
+//                        !Healer.getAbility(AbilityName.HEALER_ATTACK).isReady())
+//                    score -= 1;
+//            }
+
+            if (oppHero.getName().equals(HeroName.BLASTER) && oppHero.getCurrentHP() > 50){
+                for (int i = 0; i < world.getMyHeroes().length; i++) {
+                    if (!world.getMyHeroes()[i].equals(hero)){
+                        if (world.getMyHeroes()[i].getCurrentHP() > 0){
+                            if (world.manhattanDistance(targetCell,world.getMyHeroes()[i].getCurrentCell()) < 3){
+                                score -= 2 -
+                                        world.manhattanDistance(targetCell,world.getMyHeroes()[i].getCurrentCell());
+                            }
+                        }
+                    }
+                }
             }
         }
+
+
         int counter = 0;
         int ave_row = 0, ave_col = 0;
         int sum_rows = 0, sum_cols = 0;
@@ -472,15 +506,8 @@ public class AI {
     public void actionTurn(World world) {
         System.out.println("action started");
         Hero[] heroes = world.getMyHeroes();
-        ArrayList<Cell> Opp_cells = new ArrayList<>();
         Hero[] Opp_Heroes = world.getOppHeroes();
-
-        for (int i = 0; i < 4; i++) {
-            if (Opp_Heroes[i].getCurrentCell().isInVision()) {
-                Opp_cells.add(Opp_Heroes[i].getCurrentCell());
-            }
-        }
-
+        ArrayList<Hero> target_heroes = new ArrayList<>();
         for (Hero hero : heroes) {
             boolean flag = true;
             Cell hero_cell = hero.getCurrentCell();
@@ -509,11 +536,15 @@ public class AI {
                                 }
                             }
                         }
-                        if (goodOpp != null)
+                        if (goodOpp != null) {
                             world.castAbility(hero, AbilityName.SENTRY_RAY, goodOpp.getCurrentCell());
+                        }
                     } else {
                         int minHP = 1000;
                         Hero goodOpp = null;
+                        int cut = 0;
+                        Hero occasion = null;
+                        int min = 999;
                         for (Hero oppHero : Opp_Heroes) {
                             if (!oppHero.getCurrentCell().isInVision())
                                 continue;
@@ -522,16 +553,30 @@ public class AI {
                                 if (world.manhattanDistance(hero_cell, oppHero.getCurrentCell())
                                         <= hero.getAbility(AbilityName.SENTRY_ATTACK).getRange()
                                         + hero.getAbility(AbilityName.SENTRY_ATTACK).getAreaOfEffect()) {
-
                                     if (oppHero.getCurrentHP() < minHP) {
+                                        if (target_heroes.contains(goodOpp) && oppHero.getCurrentHP() <= 30){
+                                            cut = 1;
+                                            min = oppHero.getCurrentHP();
+                                            occasion = oppHero;
+                                            continue;
+                                        }
+                                        if (min > oppHero.getCurrentHP()){
+                                            min = oppHero.getCurrentHP();
+                                            occasion = goodOpp;
+                                        }
                                         minHP = oppHero.getCurrentHP();
                                         goodOpp = oppHero;
                                     }
                                 }
                             }
                         }
-                        if (goodOpp != null)
-                            world.castAbility(hero, AbilityName.SENTRY_ATTACK, goodOpp.getCurrentCell());
+                        if (goodOpp != null) {
+//                            if (occasion != null){
+//                                world.castAbility(hero, AbilityName.SENTRY_ATTACK, occasion.getCurrentCell());
+//                            }else{
+                                world.castAbility(hero, AbilityName.SENTRY_ATTACK, goodOpp.getCurrentCell());
+//                            }
+                        }
                     }
 
                 } else if (hero.getName().equals(HeroName.BLASTER)) {
@@ -611,8 +656,7 @@ public class AI {
                         for (Hero oppHero : Opp_Heroes) {
                             if (!oppHero.getCurrentCell().isInVision())
                                 continue;
-                            if (world.manhattanDistance(hero_cell, oppHero.getCurrentCell())
-                                    - hero.getAbility(AbilityName.HEALER_ATTACK).getAreaOfEffect() <=
+                            if (world.manhattanDistance(hero_cell, oppHero.getCurrentCell()) <=
                                     hero.getAbility(AbilityName.HEALER_ATTACK).getRange()) {
 
                                 if (oppHero.getCurrentHP() < minHP) {
@@ -625,7 +669,7 @@ public class AI {
                             world.castAbility(hero, AbilityName.HEALER_ATTACK, goodOpp.getCurrentCell());
                     }
                     if (hero.getAbility(AbilityName.HEALER_HEAL).isReady()) {
-                        int minHP = 100;
+                        int minHP = 1000;
                         Hero injury = null;
                         for (Hero hero1 : world.getMyHeroes()) {
                             if (!hero1.getCurrentCell().isInVision())
@@ -634,7 +678,6 @@ public class AI {
                                     - hero.getAbility(AbilityName.HEALER_HEAL).getAreaOfEffect() <=
                                     hero.getAbility(AbilityName.HEALER_HEAL).getRange()
                                     && world.isInVision(hero_cell, hero1.getCurrentCell())) {
-
                                 if (hero1.getCurrentHP() < minHP) {
                                     minHP = hero1.getCurrentHP();
                                     injury = hero1;
