@@ -85,7 +85,7 @@ public class AI {
             closestCells.add(minCell);
         }else{
             Random random = new Random();
-            closestCells.add(world.getMap().getObjectiveZone()[random.nextInt()%20]);
+            closestCells.add(world.getMap().getObjectiveZone()[Math.abs(random.nextInt()%20)]);
         }
         return closestCells;
     }
