@@ -310,14 +310,7 @@ public class AI {
                         score += 1;
                         break;
                     }
-                } else {
-                    if (world.manhattanDistance(heroCell, targetCell)
-                            <= hero.getAbility(AbilityName.SENTRY_ATTACK).getRange()) {
-                        score += 0.5;
-                        break;
-                    }
-                }
-
+                } 
             }
 
         } else if (name.equals(HeroName.GUARDIAN)) {
