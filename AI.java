@@ -360,6 +360,8 @@ public class AI {
                         
                         int enemyScore = 0;
                         for (Hero oppHeroe : oppHeroes) {
+                            if(!oppHeroe.getCurrentCell().isInVision()|| oppHeroe.getCurrentHP() <=0)
+                                continue;
                             Cell hCell = oppHeroe.getCurrentCell();
                             power =0;
                             attack = 0;
@@ -404,6 +406,8 @@ public class AI {
                 //now should scape
                 for(Hero uHero : oppHeroes)
                 {
+                    if(!uHero.getCurrentCell().isInVision()|| uHero.getCurrentHP() <=0)
+                                continue;
                     for(Ability ab : uHero.getAbilities())
                     {
                         if(world.manhattanDistance(targetCell, uHero.getCurrentCell()) < 
@@ -418,10 +422,9 @@ public class AI {
             {
                 for (Hero oHero : oppHeroes) 
                 {
-                    if (oHero.getName() == HeroName.BLASTER)
-                    {
-                        continue;
-                    }
+                    if(oHero.getName() == HeroName.BLASTER && 
+                            !oHero.getCurrentCell().isInVision()|| oHero.getCurrentHP() <=0)
+                                continue;
                     Cell heroCell = oHero.getCurrentCell();
                     
                     if (powerReady && world.manhattanDistance(heroCell, targetCell)
@@ -443,9 +446,9 @@ public class AI {
             {
                 for (Hero oHero : oppHeroes) 
                 {
-                    if (oHero.getName() == HeroName.SENTRY) {
-                        continue;
-                    }
+                    if(oHero.getName() == HeroName.SENTRY && 
+                            !oHero.getCurrentCell().isInVision()|| oHero.getCurrentHP() <=0)
+                                continue;
                     Cell heroCell = oHero.getCurrentCell();
                     if (world.isInVision(heroCell, targetCell)) {
                         if (powerReady)
@@ -462,6 +465,8 @@ public class AI {
             {
                 for(Hero uHero : oppHeroes)
                 {
+                    if(!uHero.getCurrentCell().isInVision()|| uHero.getCurrentHP() <=0)
+                                continue;
                     for(Ability ab : uHero.getAbilities())
                     {
                         if(world.manhattanDistance(targetCell, uHero.getCurrentCell()) < 
@@ -482,8 +487,8 @@ public class AI {
                 Boolean motamarkez = false;
                 for(Hero dHero : oppHeroes)
                 {
-                    if(dHero.getCurrentHP() ==0)
-                        continue;
+                    if(!dHero.getCurrentCell().isInVision()|| dHero.getCurrentHP() <=0)
+                                continue;
                     if(dHero.getCurrentHP() <minHP)
                     {
                         minHP = dHero.getCurrentHP();
@@ -508,7 +513,7 @@ public class AI {
                 {
                     for(Hero dHero : oppHeroes)
                     {
-                        if(dHero.getCurrentHP() > 0 )
+                        if(dHero.getCurrentCell().isInVision() && dHero.getCurrentHP() > 0 )
                         {
                             if(dHero.getCurrentHP() < minHP)
                             {
@@ -695,7 +700,10 @@ public class AI {
                 Opp_cells.add(Opp_Heroes[i].getCurrentCell());
             }
         }
-
+        HashMap<Hero, Integer> healths = new HashMap<>();
+        for(Hero uHero : Opp_Heroes)
+            healths.put(uHero, uHero.getCurrentHP());
+        
         for (Hero hero : heroes) {
             boolean flag = true;
             for (int i = 0; i < world.getOppHeroes().length; i++) {
@@ -714,35 +722,45 @@ public class AI {
                         int minHP = 1000;
                         Hero goodOpp = null;
                         for (Hero oppHero : Opp_Heroes) {
+                            if(!oppHero.getCurrentCell().isInVision()|| healths.get(oppHero) <=0)
+                                continue;
                             if (world.isInVision(hero_cell, oppHero.getCurrentCell())) { 
-                                if (oppHero.getCurrentHP() < minHP) {
+                                if (healths.get(oppHero) < minHP) {
                                     goodOpp = oppHero;
-                                    minHP = oppHero.getCurrentHP();
+                                    minHP = healths.get(oppHero);
                                 }
                             }
                         }
                         if (goodOpp != null)
+                        {
                             world.castAbility(hero, AbilityName.SENTRY_RAY, goodOpp.getCurrentCell());
+                            healths.put(goodOpp, healths.get(goodOpp) - 50);
+                        }
                     } else {
                         int minHP = 1000;
                         Hero goodOpp = null;
                         for (Hero oppHero : Opp_Heroes) 
                         {
+                            if(!oppHero.getCurrentCell().isInVision()|| healths.get(oppHero) <=0)
+                                continue;
                             if (hero.getAbility(AbilityName.SENTRY_ATTACK).isReady()
                                     && world.isInVision(hero_cell, oppHero.getCurrentCell())) {
                                 if (world.manhattanDistance(hero_cell, oppHero.getCurrentCell())
                                         <= hero.getAbility(AbilityName.SENTRY_ATTACK).getRange()
                                         + hero.getAbility(AbilityName.SENTRY_ATTACK).getAreaOfEffect()) {
                                     
-                                    if (oppHero.getCurrentHP() < minHP) {
+                                    if (healths.get(oppHero) < minHP) {
                                         goodOpp = oppHero;                                       
-                                        minHP = oppHero.getCurrentHP();
+                                        minHP = healths.get(oppHero);
                                     }
                                 }
                             }
                         }
                         if (goodOpp != null)
+                        {
                             world.castAbility(hero, AbilityName.SENTRY_ATTACK, goodOpp.getCurrentCell());
+                            healths.put(goodOpp, healths.get(goodOpp) - 30);
+                        }
                     }
 
                 } else if (hero.getName().equals(HeroName.BLASTER)) {
@@ -750,38 +768,45 @@ public class AI {
                         int minHP = 1000;
                         Hero goodOpp = null;
                         for (Hero oppHero : Opp_Heroes) {
-                            if (!oppHero.getCurrentCell().isInVision())
+                            if(!oppHero.getCurrentCell().isInVision()|| healths.get(oppHero) <=0)
                                 continue;
                             if (world.manhattanDistance(hero_cell, oppHero.getCurrentCell())
                                     - hero.getAbility(AbilityName.BLASTER_BOMB).getAreaOfEffect() <=
                                     hero.getAbility(AbilityName.BLASTER_BOMB).getRange()) {
                                 
-                                if (oppHero.getCurrentHP() < minHP) {
-                                    minHP = oppHero.getCurrentHP();
+                                if (healths.get(oppHero) < minHP) {
+                                    minHP = healths.get(oppHero);
                                     goodOpp = oppHero;
                                 }
                             }
                         }
                         if (goodOpp != null)
+                        {
                             world.castAbility(hero, AbilityName.BLASTER_BOMB, goodOpp.getCurrentCell());
+                            healths.put(goodOpp, healths.get(goodOpp) - 40);
+                        }
                     } else if (hero.getAbility(AbilityName.BLASTER_ATTACK).isReady()) {
                         int minHP = 1000;
                         Hero goodOpp = null;
                         for (Hero oppHero : Opp_Heroes) {
-
+                            if(!oppHero.getCurrentCell().isInVision()|| healths.get(oppHero) <=0)
+                                continue;
                             if (world.isInVision(hero_cell, oppHero.getCurrentCell())
                                     && world.manhattanDistance(hero_cell, oppHero.getCurrentCell())
                                     - hero.getAbility(AbilityName.BLASTER_ATTACK).getAreaOfEffect() <=
                                     hero.getAbility(AbilityName.BLASTER_ATTACK).getRange()) {
                                 
-                                if (oppHero.getCurrentHP() < minHP) {
-                                    minHP = oppHero.getCurrentHP();
+                                if (healths.get(oppHero)< minHP) {
+                                    minHP = healths.get(oppHero);
                                     goodOpp = oppHero;
                                 }
                             }
                         }
                         if (goodOpp != null)
+                        {
                             world.castAbility(hero, AbilityName.BLASTER_ATTACK, goodOpp.getCurrentCell());
+                            healths.put(goodOpp, healths.get(goodOpp) - 20);
+                        }
                     }
                 } else if (hero.getName().equals(HeroName.GUARDIAN)) {
                     if (hero.getAbility(AbilityName.GUARDIAN_ATTACK).isReady()) {
@@ -792,6 +817,7 @@ public class AI {
                             if (world.manhattanDistance(hero_cell, Opp_cell) <=
                                     hero.getAbility(AbilityName.GUARDIAN_ATTACK).getRange()) {
                                 world.castAbility(hero, AbilityName.GUARDIAN_ATTACK, Opp_cell);
+                                healths.put(world.getOppHero(Opp_cell), healths.get(world.getOppHero(Opp_cell)) - 40);
                             }
                         }
                     }
@@ -810,19 +836,23 @@ public class AI {
                         int minHP = 100;
                         Hero goodOpp = null;
                         for (Hero oppHero : Opp_Heroes) {
-                            if (!oppHero.getCurrentCell().isInVision())
+                            if(!oppHero.getCurrentCell().isInVision()|| healths.get(oppHero) <=0)
                                 continue;
                             if (world.manhattanDistance(hero_cell, oppHero.getCurrentCell())
                                     - hero.getAbility(AbilityName.HEALER_ATTACK).getAreaOfEffect() <=
                                     hero.getAbility(AbilityName.HEALER_ATTACK).getRange()) {
-                                goodOpp = oppHero;
-                                if (oppHero.getCurrentHP() < minHP) {
-                                    break;
+                                
+                                if (healths.get(oppHero) < minHP) {
+                                    minHP = healths.get(oppHero);
+                                    goodOpp = oppHero;
                                 }
                             }
                         }
                         if (goodOpp != null)
+                        {
                             world.castAbility(hero, AbilityName.HEALER_ATTACK, goodOpp.getCurrentCell());
+                            healths.put(goodOpp, healths.get(goodOpp) - 25);
+                        }
                     }
                     if (hero.getAbility(AbilityName.HEALER_HEAL).isReady()) {
                         for (Hero hero1 : world.getMyHeroes()) {
