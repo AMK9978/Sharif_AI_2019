@@ -611,7 +611,11 @@ public class AI {
                 }
             }
             if (name.equals(HeroName.BLASTER)) {
-
+                if (hero.getCurrentCell().isInObjectiveZone() && (attackReady || powerReady)){
+                    if (direction == null && hero.getCurrentCell().equals(targetCell)){
+                        score += 1;
+                    }
+                }
                 for (Hero oHero : oppHeroes) {
                     if (!oHero.getCurrentCell().isInVision() || oHero.getCurrentHP() <= 0)
                         continue;
