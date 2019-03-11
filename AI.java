@@ -10,7 +10,7 @@ public class AI {
     private int pick_period = 0;
 
     private ArrayList<Cell> Blocked_Cells = new ArrayList<>();
-
+    private ArrayList<OppDetails> oppDetailsList = new ArrayList<>();
     private HashMap<Hero, Integer> hero_turn_pair = new HashMap<>();
     private HashMap<Hero, Cell> hero_cell_pair = new HashMap<>();
     private Cell[][] heroCellArray = new Cell[6][4];
@@ -19,6 +19,97 @@ public class AI {
     // to objective zone
     private HashMap<Hero, Integer> myHeroesHp = new HashMap<>();
     private PriorityQueue<NiceCell> niceCells = new PriorityQueue<>();
+    private ArrayList<CastAbility> oppCastAbilities = new ArrayList<>();
+
+    class OppDetails{
+        int hp = 0;
+        int hero_id;
+        CastAbility castAbility;
+        int coolDown = 0;
+        int occurred_turn;
+        public OppDetails(int casterId, Cell startCell, Cell endCell, int occurred_turn) {
+            hero_id = casterId;
+            occurred_turn = occurred_turn;
+        }
+    }
+
+    private Ability getAbilityByName(World world, AbilityName abilityName){
+
+    }
+    private HeroName getOppHeroName(World world, int id){
+        for (int i = 0; i < world.getOppHeroes().length; i++) {
+            if (world.getOppHeroes()[i].getId() == id){
+                return world.getOppHeroes()[i].getName();
+            }
+        }
+        return null;
+    }
+
+    private boolean isOpppowerReady(World world, int id){
+        for (int i = 0; i < oppDetailsList.size(); i++) {
+            if (oppDetailsList.get(i).hero_id == id){
+                // if opp dead , Don't request that opp to this method and just delete anything that belong to him
+                // when you find out he has been killed
+                if (world.getCurrentTurn() > oppDetailsList.get(i).coolDown){
+                    oppDetailsList.remove(oppDetailsList.get(i));
+                }else{
+                    if (getOppHeroName(world, oppDetailsList.get(i).hero_id).equals(HeroName.BLASTER)) {
+                        if (oppDetailsList.get(i).castAbility.getAbilityName().equals(AbilityName.BLASTER_BOMB)){
+                            return false;
+                        }
+                    }
+                    else if (getOppHeroName(world, oppDetailsList.get(i).hero_id).equals(HeroName.GUARDIAN)) {
+                        if (oppDetailsList.get(i).castAbility.getAbilityName().equals(AbilityName.GUARDIAN_FORTIFY)){
+                            return false;
+                        }
+                    }
+                    else if (getOppHeroName(world, oppDetailsList.get(i).hero_id).equals(HeroName.SENTRY)) {
+                        if (oppDetailsList.get(i).castAbility.getAbilityName().equals(AbilityName.SENTRY_RAY)){
+                            return false;
+                        }
+                    }
+                    else if (getOppHeroName(world, oppDetailsList.get(i).hero_id).equals(HeroName.HEALER)) {
+                        if (oppDetailsList.get(i).castAbility.getAbilityName().equals(AbilityName.HEALER_HEAL)){
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isOppattackReady(World world,int id){
+        for (int i = 0; i < oppDetailsList.size(); i++) {
+            if (oppDetailsList.get(i).hero_id == id){
+                if (world.getCurrentTurn() > oppDetailsList.get(i).coolDown){
+                    oppDetailsList.remove(oppDetailsList.get(i));
+                }else{
+                    if (getOppHeroName(world, oppDetailsList.get(i).hero_id).equals(HeroName.BLASTER)) {
+                        if (oppDetailsList.get(i).castAbility.getAbilityName().equals(AbilityName.BLASTER_ATTACK)){
+                            return false;
+                        }
+                    }
+                    else if (getOppHeroName(world, oppDetailsList.get(i).hero_id).equals(HeroName.GUARDIAN)) {
+                        if (oppDetailsList.get(i).castAbility.getAbilityName().equals(AbilityName.GUARDIAN_ATTACK)){
+                            return false;
+                        }
+                    }
+                    else if (getOppHeroName(world, oppDetailsList.get(i).hero_id).equals(HeroName.SENTRY)) {
+                        if (oppDetailsList.get(i).castAbility.getAbilityName().equals(AbilityName.SENTRY_ATTACK)){
+                            return false;
+                        }
+                    }
+                    else if (getOppHeroName(world, oppDetailsList.get(i).hero_id).equals(HeroName.HEALER)) {
+                        if (oppDetailsList.get(i).castAbility.getAbilityName().equals(AbilityName.HEALER_ATTACK)){
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
 
     //adding this class to have enough information in order to move
     class NiceCell implements Comparable<NiceCell> {
@@ -911,9 +1002,6 @@ public class AI {
             }
             pick_period = 0;
         }
-        for (int i = 0; i < world.getMyHeroes().length; i++) {
-            System.out.println("id:" + world.getMyHeroes()[i].getId());
-        }
     }
 
 
@@ -926,8 +1014,11 @@ public class AI {
         int O_o = (int) System.currentTimeMillis();
         Hero My_hero;
         if (pick_period == 0) {
-            for (int i = 0; i < 4; i++) {
-                System.out.println("name:" + world.getMyHeroes()[i].getName() + ",id:" + world.getMyHeroes()[i].getId());
+            for (int i = 0; i < world.getMyHeroes().length; i++) {
+                System.out.println("id:" + world.getMyHeroes()[i].getId());
+            }
+            for (int i = 0; i < world.getOppHeroes().length; i++) {
+                System.out.println("Opp id:" + world.getOppHeroes()[i].getId());
             }
             pick_period = 1;
         }
@@ -936,6 +1027,19 @@ public class AI {
         Blocked_Cells.clear();
         for (int j = 0; j < world.getMyHeroes().length; j++) {
             Blocked_Cells.add(world.getMyHeroes()[j].getCurrentCell());
+        }
+        oppCastAbilities.clear();
+        for (int i = 0; i < ; i++) {
+
+        }
+        if (world.getMovePhaseNum() == 0){
+            for(CastAbility ability : world.getOppCastAbilities()){
+                System.out.println("Opp ability :"+ability.getAbilityName() +", bye "+ability.getCasterId());
+                oppCastAbilities.add(ability);
+                OppDetails oppDetails = new OppDetails(ability.getCasterId(),
+                        ability.getStartCell(),ability.getEndCell(), world.getCurrentTurn());
+                oppDetailsList.add(oppDetails);
+            }
         }
         for (int i = 0; i < 4; i++) {
             My_hero = world.getMyHeroes()[i];
