@@ -76,6 +76,24 @@ public class AI {
         return closestCells;
     }
 
+    private Cell getClosestZoneCells(World world, Cell source_cell) {
+        Cell[] cells = world.getMap().getObjectiveZone();
+        Cell closestCells = null;
+        Cell minCell = null;
+        int min = 9999;
+        for (Cell cell : cells) {
+            int num = world.manhattanDistance(source_cell, cell);
+            if (num < min) {
+                min = num;
+                minCell = cell;
+            }
+        }
+        if (minCell != null) {
+            closestCells = minCell;
+        }
+        return closestCells;
+    }
+
     private Cell getClosestWalls(World world, Hero hero) {
         int min = 9999;
         Cell hero_cell = hero.getCurrentCell();
@@ -225,8 +243,12 @@ public class AI {
         //dont move
         if (targetCell.isInObjectiveZone()) {
             score = getCellScore(hero, world, targetCell, null, Healer, isHealer);
-            score += 3 / hero.getMoveAPCost();
-
+            if (heroName.equals("guardian")) {
+                System.out.println("Score of null is:" + score + " and cost is:" + hero.getMoveAPCost());
+            }
+            int y = hero.getMoveAPCost();
+            score += (y) * 0.1;
+            System.out.println("score summed up via :" + y + " and score is:" + score);
             if (hero_cell_pair.containsKey(hero) &&
                     hero_turn_pair.get(hero) >= 2) {
 //                score -= 1.5;
@@ -499,8 +521,9 @@ public class AI {
                         if (dHero.getCurrentHP() == 0)
                             continue;
                         int guardians = 0;
-                        for (int i = 0; i < world.getOppHeroes().length; i++) {
-                            if (world.getOppHeroes()[i].getName().equals(HeroName.GUARDIAN)) {
+                        int O_o = 0;
+                        for (; O_o < world.getOppHeroes().length; O_o++) {
+                            if (world.getOppHeroes()[O_o].getName().equals(HeroName.GUARDIAN)) {
                                 guardians++;
                             }
                         }
@@ -574,6 +597,7 @@ public class AI {
                         }
                     }
 
+                    System.out.println("hero :" + hero.getName() + ",score:" + score + ",direction:" + direction);
                 }
 //                else if (powerReady) {
 //                    minHP = 1000;
@@ -610,9 +634,10 @@ public class AI {
                     }
                 }
             }
+
             if (name.equals(HeroName.BLASTER)) {
-                if (hero.getCurrentCell().isInObjectiveZone() && (attackReady || powerReady)){
-                    if (direction == null && hero.getCurrentCell().equals(targetCell)){
+                if (hero.getCurrentCell().isInObjectiveZone() && (attackReady || powerReady)) {
+                    if (direction == null && hero.getCurrentCell().equals(targetCell)) {
                         score += 1;
                     }
                 }
@@ -632,10 +657,10 @@ public class AI {
                         if (world.isInVision(targetCell, heroCell) && attackReady
                                 && world.manhattanDistance(heroCell, targetCell)
                                 >= attackRange + attackAbility.getAreaOfEffect() && world.manhattanDistance(heroCell, targetCell) < 6) {
-                            score -= (world.manhattanDistance(heroCell, targetCell) - 5) / 2;
+                            score -= (world.manhattanDistance(heroCell, targetCell) - 4) / 2;
                         }
                         if (world.manhattanDistance(heroCell, targetCell) < 5) {
-                            score -= (5 - world.manhattanDistance(heroCell, targetCell)) / 2;
+                            score -= (4 - world.manhattanDistance(heroCell, targetCell)) / 2;
                         }
                     }
                 }
@@ -715,19 +740,19 @@ public class AI {
                     score -= 1;
                 }
                 Cell heroCell = oHero.getCurrentCell();
-                if (world.isInVision(heroCell, targetCell)) {
+                if (world.isInVision(heroCell, hero.getCurrentCell())) {
                     if (hero.getAbility(AbilityName.SENTRY_RAY).isReady()) {
                         score += 2.5;
                         if (direction == null) {
-                            score += 0.5;
+                            score += 0.75;
                         }
                         break;
                     }
-                    if (world.manhattanDistance(heroCell, targetCell)
+                    if (world.manhattanDistance(heroCell, hero.getCurrentCell())
                             <= hero.getAbility(AbilityName.SENTRY_ATTACK).getRange()) {
                         score += 1.5;
                         if (direction == null) {
-                            score += 0.5;
+                            score += 0.75;
                         }
                         break;
                     }
@@ -771,7 +796,7 @@ public class AI {
             if (!isHealer && world.manhattanDistance(cell, healerCell) <= 4)
                 score += .5;
         }
-        System.out.println("hero :" + hero.getName() + ",score:" + score);
+        System.out.println("hero :" + hero.getName() + ",score:" + score + ",direction:" + direction);
 
         for (Hero oppHero : oppHeroes) {
             Cell oppCell = oppHero.getCurrentCell();
@@ -847,7 +872,7 @@ public class AI {
 
         for (int i = 0; i < 31; i++) {
             for (int j = 0; j < 31; j++) {
-                if (cells[i][j].isWall())
+                if (cells[i][j].isWall() && (world.manhattanDistance(cells[i][j], getClosestZoneCells(world, cells[i][j])) < 4))
                     dis.add(world.manhattanDistance(i, j, 0, 0));
             }
         }
