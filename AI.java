@@ -1016,6 +1016,25 @@ public class AI {
                     }
                 }
             }
+
+            if (oppHero.getName().equals(HeroName.SHADOW)) {
+                for (int i = 0; i < world.getMyHeroes().length; i++) {
+                    if (world.getMyHeroes()[i].getCurrentHP() == 0) {
+                        continue;
+                    }
+                    if (world.isInVision(world.getMyHeroes()[i].getCurrentCell(), oppCell)) {
+                        for (int j = 0; j < world.getMyHeroes().length; j++) {
+                            if (world.getMyHeroes()[j].equals(world.getMyHeroes()[i])
+                                    || world.getMyHeroes()[j].getCurrentHP() <= 0){
+                                continue;
+                            }
+
+
+                        }
+                    }
+                }
+            }
+
         }
 
 
@@ -1720,7 +1739,6 @@ public class AI {
             }
         }
     }
-
 
     private Cell change(Direction direction, World world, int row, int column) {
         Cell target;
