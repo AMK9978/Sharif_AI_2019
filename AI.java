@@ -663,7 +663,7 @@ public class AI {
             Cell target = find_good_cell_for_sentry_to_go(world);
             if(target!=null){
                 System.out.println("good Cell for sentry to go there for its ray"+"("+target.getRow()+","+target.getColumn()+")");
-                if(world.getPathMoveDirections(cell, target, Blocked_Cells).length == 0 &&
+                if(world.getPathMoveDirections(cell, target, Blocked_Cells).length != 0 &&
                         world.getPathMoveDirections(cell, target, Blocked_Cells)[0] == direction)
                     score+=5;
             }
