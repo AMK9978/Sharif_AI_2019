@@ -159,7 +159,6 @@ public class AI {
             if (targetCell.isInObjectiveZone())
                 score += 1.5;
             Cell goodCell = getClosestCells(world, hero).get(0);
-            System.out.println("good row:" + goodCell.getRow() + ",column:" + goodCell.getColumn());
             for (int i = 0; i < 5; i++) {
                 if (world.getPathMoveDirections(cell, goodCell, Blocked_Cells).length == 0) {
                     blocks.add(goodCell);
@@ -298,7 +297,6 @@ public class AI {
     }
 
     private HeroName getOppHeroName(World world, int id) {
-        System.out.println("id for getOppHeroName :" + id);
         for (int i = 0; i < world.getOppHeroes().length; i++) {
             if (world.getOppHeroes()[i].getId() == id) {
                 return world.getOppHeroes()[i].getName();
@@ -309,13 +307,9 @@ public class AI {
 
     private boolean isOpppowerReady(World world, int id) {
         for (int i = 0; i < oppDetailsList.size(); i++) {
-            System.out.println("id in OppPowerReady?!:" + id);
             if (oppDetailsList.get(i).hero_id == id) {
-                System.out.println("yes!");
                 // if opp dead , Don't request that opp to this method and just delete anything that belong to him
                 // when you find out he has been killed
-                System.out.println("occurred turn:" + oppDetailsList.get(i).occurred_turn + ",and current Turn:" +
-                        world.getCurrentTurn());
                 if (world.getCurrentTurn() > oppDetailsList.get(i).coolDown) {
                     oppDetailsList.remove(i);
                 } else {
@@ -604,12 +598,8 @@ public class AI {
         //dont move
         {
             score = getCellScore(hero, world, targetCell, null, Healer, isHealer);
-            if (heroName.equals("guardian")) {
-                System.out.println("Score of null is:" + score + " and cost is:" + hero.getMoveAPCost());
-            }
             int y = hero.getMoveAPCost();
             score += (y) * 0.1;
-            System.out.println("score summed up via :" + y + " and score is:" + score);
             if (hero_cell_pair.containsKey(hero) &&
                     hero_turn_pair.get(hero) >= 2) {
 //                score -= 1.5;
@@ -944,7 +934,6 @@ public class AI {
                         }
                     }
 
-                    System.out.println("hero :" + hero.getName() + ",score:" + score + ",direction:" + direction);
                 } else {
                     Boolean b = true;
                     int asli = -1000;
@@ -1015,7 +1004,7 @@ public class AI {
                                         continue;
 
                                     if (world.manhattanDistance(bCell, uHero.getCurrentCell()) <=
-                                            ab.getRange() + ab.getAreaOfEffect())
+                                            ab.getRange() + ab.getAreaOfEffect() + 1)
                                         sco -= 1;
                                 }
 
@@ -1035,26 +1024,26 @@ public class AI {
                     if (!oHero.getCurrentCell().isInVision() || oHero.getCurrentHP() <= 0)
                         continue;
                     Cell heroCell = oHero.getCurrentCell();
-                    if (oHero.getName().equals(HeroName.GUARDIAN)) {
-                        if (powerReady && world.manhattanDistance(heroCell, targetCell)
-                                >= powerRange + powerAbility.getAreaOfEffect() &&
-                                world.manhattanDistance(heroCell, targetCell) < 8) {
-                            score -= (world.manhattanDistance(heroCell, targetCell) - 7) / 2;
-                        }
-                        if (world.manhattanDistance(heroCell, targetCell) < 8) {
-                            score -= (7 - world.manhattanDistance(heroCell, targetCell)) / 2;
-                        }
-
-                        if (world.isInVision(targetCell, heroCell) && attackReady
-                                && world.manhattanDistance(heroCell, targetCell)
-                                >= attackRange + attackAbility.getAreaOfEffect() && world.manhattanDistance(heroCell,
-                                targetCell) < 6) {
-                            score -= (world.manhattanDistance(heroCell, targetCell) - 4) / 2;
-                        }
-                        if (world.manhattanDistance(heroCell, targetCell) < 5) {
-                            score -= (4 - world.manhattanDistance(heroCell, targetCell)) / 2;
-                        }
-                    }
+//                    if (oHero.getName().equals(HeroName.GUARDIAN)) {
+//                        if (powerReady && world.manhattanDistance(heroCell, targetCell)
+//                                >= powerRange + powerAbility.getAreaOfEffect() &&
+//                                world.manhattanDistance(heroCell, targetCell) < 8) {
+//                            score -= (world.manhattanDistance(heroCell, targetCell) - 7) / 2;
+//                        }
+//                        if (world.manhattanDistance(heroCell, targetCell) < 8) {
+//                            score -= (7 - world.manhattanDistance(heroCell, targetCell)) / 2;
+//                        }
+//
+//                        if (world.isInVision(targetCell, heroCell) && attackReady
+//                                && world.manhattanDistance(heroCell, targetCell)
+//                                >= attackRange + attackAbility.getAreaOfEffect() && world.manhattanDistance(heroCell,
+//                                targetCell) < 6) {
+//                            score -= (world.manhattanDistance(heroCell, targetCell) - 4) / 2;
+//                        }
+//                        if (world.manhattanDistance(heroCell, targetCell) < 5) {
+//                            score -= (4 - world.manhattanDistance(heroCell, targetCell)) / 2;
+//                        }
+//                    }
                 }
             }
         }
@@ -1106,7 +1095,7 @@ public class AI {
                 if (world.isInVision(heroCell, targetCell)) {
                     if (hero.getAbility(AbilityName.SENTRY_RAY).isReady()) {
                         score += 2.5;
-                        if (direction == null) {
+                        if (direction == null && hero.getCurrentCell().equals(targetCell)) {
                             score += 0.75;
                         }
                         break;
@@ -1130,7 +1119,7 @@ public class AI {
                     continue;
                 }
                 if (world.manhattanDistance(heroCell, hero.getCurrentCell()) <= 5 &&
-                        oHero.getName().equals(HeroName.BLASTER) && !name.equals(HeroName.GUARDIAN)) {
+                        oHero.getName().equals(HeroName.BLASTER) ) {
                     score -= (5 - world.manhattanDistance(heroCell, targetCell));
                 }
             }
@@ -1182,7 +1171,6 @@ public class AI {
             if (!isHealer && world.manhattanDistance(cell, healerCell) <= 4)
                 score += .5;
         }
-        System.out.println("hero :" + hero.getName() + ",score:" + score + ",direction:" + direction);
 
         for (Hero oppHero : oppHeroes) {
             Cell oppCell = oppHero.getCurrentCell();
@@ -1308,11 +1296,11 @@ public class AI {
             world.pickHero(HeroName.BLASTER);
             pick_period++;
         } else {
-            if (extraSentry) {
-                world.pickHero(HeroName.SENTRY);
-            } else {
+//            if (extraSentry) {
+//                world.pickHero(HeroName.SENTRY);
+//            } else {
                 world.pickHero(HeroName.BLASTER);
-            }
+//            }
             pick_period = 0;
         }
     }
@@ -2018,7 +2006,6 @@ public class AI {
 
                             }
                         }
-                        System.out.println("healer dodged");
                         world.castAbility(hero, AbilityName.HEALER_DODGE, des);
                     }
 
@@ -2035,7 +2022,6 @@ public class AI {
                 }
                 if (world.manhattanDistance(myHero.getCurrentCell(), Opphero.getCurrentCell()) <= 7 &&
                         !Opphero.getName().equals(HeroName.GUARDIAN)) {
-                    System.out.println("in remaining use cases!");
                     if (myHero.getName().equals(HeroName.GUARDIAN)) {
                         I_m_Guardian = myHero;
                     }
@@ -2075,7 +2061,6 @@ public class AI {
                 des = hero_cell;
             }
             if (des != null) {
-                System.out.println("guardian fortified and end:" + des.getRow() + ",col:" + des.getColumn());
                 world.castAbility(hero, AbilityName.GUARDIAN_FORTIFY, des);
             }
         }
